@@ -1,0 +1,23 @@
+# .github/workflows/simple-echo.yml
+name: Build & Deploy - S8 & S9
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_deploy_s8_s9:
+    name: Build and Deploy for S8/S9
+    runs-on: [build, deploy]  # This targets runners with these labels
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Echo Build Step
+        run: echo "Executing build step for S8 and S9"
+
+      - name: Echo Deploy Step
+        run:  sleep 60
+       
