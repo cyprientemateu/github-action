@@ -3,10 +3,10 @@
 # -----------------------
 # Configurable Variables.
 # -----------------------
-RUNNER_VERSION="2.323.0"
-REPO_URL="https://github.com/DEL-ORG/del-student-devops"
-RUNNER_TOKEN="AN4MXFJDKBNW6QM5MV7AH5DIFDYN4"
-RUNNER_LABELS="build,deploy"
+RUNNER_VERSION="2.324.0"
+REPO_URL="https://github.com/cyprientemateu/github-action"
+RUNNER_TOKEN="A3TRWM5KTKCV55ZCU6IKL5DIF7QPI"
+RUNNER_LABELS="tcc=build,tcc-deploy"
 RUNNER_USER="runner"
 RUNNER_COUNT=3
 BASE_DIR="/opt/github-runner-multi"
@@ -38,7 +38,7 @@ if [ ! -f "$RUNNER_TAR" ]; then
 fi
 
 echo "[INFO] Validating SHA256 checksum"
-echo "0dbc9bf5a58620fc52cb6cc0448abcca964a8d74b5f39773b7afcad9ab691e19  $RUNNER_TAR" | shasum -a 256 -c
+echo "e8e24a3477da17040b4d6fa6d34c6ecb9a2879e800aa532518ec21e49e21d7b4  $RUNNER_TAR" | shasum -a 256 -c
 
 # -----------------------
 # Install multiple runners

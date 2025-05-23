@@ -9,7 +9,7 @@ on:
 jobs:
   build_deploy_s8_s9:
     name: Build and Deploy for S8/S9
-    runs-on: [repo-build]  # This targets runners with these labels
+    runs-on: [tcc-deploy]  # This targets runners with these labels
 
     steps:
       - name: Checkout Code
