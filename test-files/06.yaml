@@ -8,7 +8,7 @@ on:
 jobs:
   checkout:
     name: Stage 1 - Checkout
-    runs-on: [self-hosted,s8]
+    runs-on: [self-hosted,tcc-deploy,tcc=build]
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -16,81 +16,81 @@ jobs:
       - name: Checkout Info
         run: |
           echo "Checking out the repository. Please wait ............"
-          sleep 30
+          sleep 5
 
   test:
     name: Stage 2 - Test
-    runs-on: [self-hosted,s8]
+    runs-on: [self-hosted,tcc-deploy,tcc=build]
     needs: checkout
     steps:
       - name: Testing the Code
         run: |
           echo "Testing the code. Please wait ............"
-          sleep 30
+          sleep 5
 
   scan:
     name: Stage 3 - Scan
-    runs-on: [self-hosted,s8]
+    runs-on: [self-hosted,tcc-deploy,tcc=build]
     needs: checkout
     steps:
       - name: Scanning the Code
         run: |
           echo "Scanning the code. Please wait ............"
-          sleep 30
+          sleep 5
 
   build:
     name: Stage 4 - Build
-    runs-on: [self-hosted,s8]
+    runs-on: [self-hosted,tcc-deploy,tcc=build]
     needs: checkout
     steps:
       - name: Building the Code
         run: |
           echo "Building the code. Please wait ............"
-          sleep 30
+          sleep 5
 
   push-artifact:
     name: Stage 5 - Push to Artifactory
-    runs-on: [self-hosted,s8]
+    runs-on: [self-hosted,tcc-deploy,tcc=build]
     needs: checkout
     steps:
       - name: Pushing the Code to Artifactory
         run: |
           echo "Pushing the code to artifactory. Please wait ............"
-          sleep 30
+          sleep 5
 
   deploy:
     name: Stage 6 - Deploy
-    runs-on: [self-hosted,s8]
+    runs-on: [self-hosted,tcc-deploy,tcc=build]
     needs: checkout
     steps:
       - name: Deploying the Code
         run: |
           echo "Deploying the code. Please wait ............"
-          sleep 30
+          sleep 5
 
   validate:
     name: Stage 7 - Post-Deployment Validation
-    runs-on: [self-hosted,s8]
+    runs-on: [self-hosted,tcc-deploy,tcc=build]
     needs: checkout
     steps:
       - name: Checking the Container State
         run: |
           echo "Checking the container state. Please wait ............"
-          sleep 30
+          sleep 5
 
   cleanup:
     name: Stage 8 - Cleanup
-    runs-on: [self-hosted,s8]
+    runs-on: [self-hosted,tcc-deploy,tcc=build]
     needs: checkout
     steps:
       - name: Clean Up
         run: |
           echo "Clean Up. Please wait ............"
-          sleep 30
+          sleep 5
 
   notify:
     name: Stage 9 - Notify
-    runs-on: [self-hosted,s8]
+    runs-on: [self-hosted,tcc-deploy,tcc=build]
     needs: cleanup
     steps:
       - name: Success Message
