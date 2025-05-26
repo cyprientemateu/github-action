@@ -1,0 +1,19 @@
+name: Check Docker and Git Versions
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  check-versions:
+    runs-on: [build]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Check Docker version
+        run: docker --version
+
+      - name: Check Git version
+        run: git --version

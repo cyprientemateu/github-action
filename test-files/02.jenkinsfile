@@ -1,0 +1,78 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout Repository') {
+            steps {
+                echo 'Checking out the repository. Please wait ............'
+                checkout scm
+                sleep time: 1, unit: 'SECONDS'
+            }
+        }
+
+        stage('Checkout Stage') {
+            steps {
+                echo 'Checking out the repository. Please wait ............'
+                sleep time: 1, unit: 'SECONDS'
+            }
+        }
+
+        stage('Testing the Code') {
+            steps {
+                echo 'Testing the code. Please wait ............'
+                sleep time: 1, unit: 'SECONDS'
+            }
+        }
+
+        stage('Scanning the Code') {
+            steps {
+                echo 'Scanning the code. Please wait ............'
+                sleep time: 1, unit: 'SECONDS'
+            }
+        }
+
+        stage('Building the Code') {
+            steps {
+                echo 'Building the code. Please wait ............'
+                sleep time: 1, unit: 'SECONDS'
+            }
+        }
+
+        stage('Pushing the Code to Artifactory') {
+            steps {
+                echo 'Pushing the code to artifactory. Please wait ............'
+                sleep time: 1, unit: 'SECONDS'
+            }
+        }
+
+        stage('Deploying the Code') {
+            steps {
+                echo 'Deploying the code. Please wait ............'
+                sleep time: 1, unit: 'SECONDS'
+            }
+        }
+
+        stage('Checking the Container State') {
+            steps {
+                echo 'Checking the container state. Please wait ............'
+                sleep time: 1, unit: 'SECONDS'
+            }
+        }
+
+        stage('Clean Up') {
+            steps {
+                echo 'Clean Up. Please wait ............'
+                sleep time: 1, unit: 'SECONDS'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline succeeded!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}
