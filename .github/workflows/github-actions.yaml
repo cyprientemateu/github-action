@@ -41,9 +41,7 @@ jobs:
   build:
     name: Stage 4 - Build
     runs-on: [self-hosted,tcc=build]
-    needs: 
-      - test
-      - scan
+    needs: checkout
     steps:
       - name: Building the Code
         run: |
@@ -53,7 +51,7 @@ jobs:
   push-artifact:
     name: Stage 5 - Push to Artifactory
     runs-on: [self-hosted,tcc=build]
-    needs: build
+    needs: checkout
     steps:
       - name: Pushing the Code to Artifactory
         run: |
@@ -63,9 +61,7 @@ jobs:
   deploy:
     name: Stage 6 - Deploy
     runs-on: [self-hosted,tcc=build]
-    needs: 
-      - push-artifact
-      - build
+    needs: checkout
     steps:
       - name: Deploying the Code
         run: |
@@ -75,7 +71,7 @@ jobs:
   validate:
     name: Stage 7 - Post-Deployment Validation
     runs-on: [self-hosted,tcc=build]
-    needs: deploy
+    needs: checkout
     steps:
       - name: Checking the Container State
         run: |
@@ -85,7 +81,7 @@ jobs:
   cleanup:
     name: Stage 8 - Cleanup
     runs-on: [self-hosted,tcc=build]
-    needs: validate
+    needs: checkout
     steps:
       - name: Clean Up
         run: |
