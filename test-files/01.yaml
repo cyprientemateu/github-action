@@ -6,7 +6,7 @@ on:
 
 jobs:
   check-versions:
-    runs-on: [build]
+    runs-on: [tcc-deploy]
 
     steps:
       - name: Checkout repository

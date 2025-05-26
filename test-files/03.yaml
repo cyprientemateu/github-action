@@ -90,7 +90,7 @@ jobs:
 
   notify:
     name: Stage 9 - Notify
-    runs-on: [self-hosted,s8]
+    runs-on: [self-hosted,tcc-deploy]
     needs: cleanup
     steps:
       - name: Success Message

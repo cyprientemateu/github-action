@@ -8,7 +8,7 @@ on:
 
 jobs:
   devops-pipeline:
-    runs-on: [self-hosted,s8]
+    runs-on: [self-hosted,tcc-deploy]
 
     steps:
       - name: Checkout Repository

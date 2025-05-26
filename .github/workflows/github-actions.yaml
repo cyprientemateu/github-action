@@ -1,19 +1,55 @@
-name: Check Docker and Git Versions
+name: DevOps Pipeline
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - develop
 
 jobs:
-  check-versions:
-    runs-on: [tcc-deploy]
+  devops-pipeline:
+    runs-on: [self-hosted,tcc-deploy]
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Check Docker version
-        run: docker --version
+      - name: Checkout Stage
+        run: |
+          echo "Checking out the repository. Please wait ............"
+          sleep 1
+      - name: Testing the Code
+        run: |
+          echo "Testing the code. Please wait ............"
+          sleep 1
+      - name: Scanning the Code
+        run: |
+          echo "Scanning the code. Please wait ............"
+          sleep 1
+      - name: Building the Code
+        run: |
+          echo "Building the code. Please wait ............"
+          sleep 1
+      - name: Pushing the Code to Artifactory
+        run: |
+          echo "Pushing the code to artifactory. Please wait ............"
+          sleep 1
+      - name: Deploying the Code
+        run: |
+          echo "Deploying the code. Please wait ............"
+          sleep 1
+      - name: Checking the Container State
+        run: |
+          echo "Checking the container state. Please wait ............"
+          sleep 1
+      - name: Clean Up
+        run: |
+          echo "Clean Up. Please wait ............"
+          sleep 1
+      - name: Success Message
+        if: success()
+        run: echo "Pipeline succeeded!"
 
-      - name: Check Git version
-        run: git --version
+      - name: Failure Message
+        if: failure()
+        run: echo "Pipeline failed!"
