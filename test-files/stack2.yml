@@ -30,7 +30,7 @@ jobs:
       - name: Stop and Remove Existing Containers
         run: |
           echo "Stopping and removing existing containers..."
-          sudo docker compose -f docker-compose.yml down || true
+          sudo docker-compose -f docker-compose.yml down || true
 
       - name: Pull Latest Images
         run: |
@@ -54,7 +54,7 @@ jobs:
           WEATHER_APP_REDIS_PASSWORD_USERNAME=${{ secrets.WEATHER_APP_REDIS_PASSWORD_USERNAME }} \
           WEATHER_APP_REDIS_PASSWORD=${{ secrets.WEATHER_APP_REDIS_PASSWORD }} \
           WEATHER_API_TOKEN=${{ secrets.WEATHER_API_TOKEN }} \
-          sudo -E envsubst < docker-compose.yml | sudo docker compose -f - up -d
+          sudo -E envsubst < docker-compose.yml | sudo docker-compose -f - up -d
 
       - name: List Running Containers
         run: |

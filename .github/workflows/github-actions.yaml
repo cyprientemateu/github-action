@@ -1,69 +1,97 @@
-name: Deploy Weather App to EC2
+name: Clean Up Docker Containers and Images
 
 on:
   push:
     branches:
-      - main
+      - main  # Replace with your branch if different
   workflow_dispatch:
 
 jobs:
-  deploy:
+  cleanup:
     runs-on: [self-hosted, tcc-deploy]
 
     steps:
-      - name: Debug Environment Info
+      - name: List running containers before cleanup
         run: |
-          echo "===== GitHub Actions Context ====="
-          echo "Repository: $GITHUB_REPOSITORY"
-          echo "Actor: $GITHUB_ACTOR"
-          echo "Ref: $GITHUB_REF"
-          echo "SHA: $GITHUB_SHA"
-          echo "Event: $GITHUB_EVENT_NAME"
-          echo "Runner Name: $RUNNER_NAME"
-          echo "Runner Labels: $RUNNER_LABELS"
-          echo "Workflow: $GITHUB_WORKFLOW"
-          echo "=================================="
-
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Stop and Remove Existing Containers
-        run: |
-          echo "Stopping and removing existing containers..."
-          sudo docker-compose -f docker-compose.yml down || true
-
-      - name: Pull Latest Images
-        run: |
-          echo "Pulling latest images for all services..."
-          sudo docker pull cyprientemateu/sixfure-db:${{ secrets.DB_IMAGE_TAG }}
-          sudo docker pull cyprientemateu/sixfure-redis:${{ secrets.REDIS_IMAGE_TAG }}
-          sudo docker pull cyprientemateu/sixfure-ui:${{ secrets.UI_IMAGE_TAG }}
-          sudo docker pull cyprientemateu/sixfure-weather:${{ secrets.WEATHER_IMAGE_TAG }}
-          sudo docker pull cyprientemateu/sixfure-auth:${{ secrets.AUTH_IMAGE_TAG }}
-
-      - name: Start Containers with Docker Compose
-        run: |
-          echo "Starting containers with injected secrets..."
-          DB_IMAGE_TAG=${{ secrets.DB_IMAGE_TAG }} \
-          REDIS_IMAGE_TAG=${{ secrets.REDIS_IMAGE_TAG }} \
-          UI_IMAGE_TAG=${{ secrets.UI_IMAGE_TAG }} \
-          WEATHER_IMAGE_TAG=${{ secrets.WEATHER_IMAGE_TAG }} \
-          AUTH_IMAGE_TAG=${{ secrets.AUTH_IMAGE_TAG }} \
-          WEATHER_APP_MYSQL_ROOT_PASSWORD=${{ secrets.WEATHER_APP_MYSQL_ROOT_PASSWORD }} \
-          WEATHER_APP_MYSQL_PASSWORD=${{ secrets.WEATHER_APP_MYSQL_PASSWORD }} \
-          WEATHER_APP_REDIS_PASSWORD_USERNAME=${{ secrets.WEATHER_APP_REDIS_PASSWORD_USERNAME }} \
-          WEATHER_APP_REDIS_PASSWORD=${{ secrets.WEATHER_APP_REDIS_PASSWORD }} \
-          WEATHER_API_TOKEN=${{ secrets.WEATHER_API_TOKEN }} \
-          sudo -E envsubst < docker-compose.yml | sudo docker-compose -f - up -d
-
-      - name: List Running Containers
-        run: |
-          echo "Listing running Docker containers:"
+          echo "Running containers before cleanup:"
           sudo docker ps
 
-      - name: Show Container Logs (Optional - for troubleshooting)
-        if: failure()
+      - name: List Docker images before cleanup
         run: |
-          echo "Showing logs for failed containers..."
+          echo "Docker images before cleanup:"
+          sudo docker images
+
+      - name: Stop and remove all containers
+        run: |
+          echo "Stopping and removing all containers..."
+          sudo docker ps -aq | xargs -r sudo docker stop
+          sudo docker ps -aq | xargs -r sudo docker rm
+
+      - name: Remove all Docker images
+        run: |
+          echo "Removing all Docker images..."
+          sudo docker images -q | xargs -r sudo docker rmi -f
+
+      - name: Verify no containers and images remain
+        run: |
+          echo "Remaining containers (should be none):"
           sudo docker ps -a
-          sudo docker logs $(sudo docker ps -aq)
+          echo "Remaining images (should be none):"
+          sudo docker images
+
+      - name: Notify Slack on success
+        if: success()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "good",
+              "title": "*✅ Docker Cleanup Succeeded*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* triggered cleanup (`${{ github.sha }}`)", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK
+
+      - name: Notify Slack on failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "danger",
+              "title": "*❌ Docker Cleanup Failed*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* triggered cleanup (`${{ github.sha }}`)", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK
+
+      - name: Notify Slack if unstable
+        if: ${{ job.status == 'cancelled' || job.status == 'skipped' }}
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "warning",
+              "title": "*⚠️ Docker Cleanup Unstable*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* triggered cleanup (`${{ github.sha }}`)", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK
