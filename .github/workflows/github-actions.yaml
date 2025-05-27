@@ -1,7 +1,10 @@
 name: Clean Up Docker Containers and Images
 
 on:
-  workflow_dispatch:  # Trigger manually
+  push:
+    branches:
+      - main  # Replace with your branch if different
+  workflow_dispatch:
 
 jobs:
   cleanup:
