@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   db:
-    image: cyprientemateu/sixfure-db:DB_IMAGE_TAG
+    image: cyprientemateu/sixfure-db:${DB_IMAGE_TAG}
     ports:
       - "3306:3306"
     environment:
@@ -22,7 +22,7 @@ services:
       retries: 5
 
   redis:
-    image: cyprientemateu/sixfure-redis:REDIS_IMAGE_TAG
+    image: cyprientemateu/sixfure-redis:${REDIS_IMAGE_TAG}
     ports:
       - "6379:6379"
     environment:
@@ -35,7 +35,7 @@ services:
     restart: always
 
   ui:
-    image: cyprientemateu/sixfure-ui:UI_IMAGE_TAG
+    image: cyprientemateu/sixfure-ui:${UI_IMAGE_TAG}
     ports:
       - "3000:3000"
     environment:
@@ -55,7 +55,7 @@ services:
         condition: service_started
 
   weather:
-    image: cyprientemateu/sixfure-weather:WEATHER_IMAGE_TAG
+    image: cyprientemateu/sixfure-weather:${WEATHER_IMAGE_TAG}
     ports:
       - "5000:5000"
     environment:
@@ -65,7 +65,7 @@ services:
     restart: always
 
   auth:
-    image: cyprientemateu/sixfure-auth:AUTH_IMAGE_TAG
+    image: cyprientemateu/sixfure-auth:${AUTH_IMAGE_TAG}
     ports:
       - "8080:8080"
     environment:
