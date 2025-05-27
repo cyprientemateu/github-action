@@ -17,16 +17,16 @@ jobs:
         run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Pull Docker image from Docker Hub
-        run: docker pull cyprientemateu/clinic-website:v1
+        run: sudo docker pull cyprientemateu/clinic-website:v1
 
       - name: Stop and remove existing container if running
         run: |
-          docker stop myapp-container || true
-          docker rm myapp-container || true
+          sudo docker stop myapp-container || true
+          sudo docker rm myapp-container || true
 
       - name: Run Docker container
         run: |
-          docker run -d --name myapp-container -p 80:80 cyprientemateu/clinic-website:v1
+          sudo docker run -d --name myapp-container -p 80:80 cyprientemateu/clinic-website:v1
 
       - name: Notify Slack on success
         if: success()
