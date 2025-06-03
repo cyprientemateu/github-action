@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  db:
+    image: DB_IMAGE
+    container_name: app01_db
+    environment:
+      POSTGRES_USER: POSTGRES_USER_S9
+      POSTGRES_PASSWORD: POSTGRES_PASSWORD_S9
+      POSTGRES_DB: logindb
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  user-service:
+    image: API_IMAGE
+    container_name: app01_user-service
+    depends_on:
+      - db
+    environment:
+      POSTGRES_USER: POSTGRES_USER_S9
+      POSTGRES_PASSWORD: POSTGRES_PASSWORD_S9
+      POSTGRES_DB: logindb
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    ports:
+      - 8000:8000
+    restart: on-failure
+
+  frontend-service:
+    image: FRONTEND_IMAGE
+    container_name: app01_frontend
+    depends_on:
+      - user-service
+    ports:
+      - 8065:80
+    restart: always
+
+volumes:
+  db_data:

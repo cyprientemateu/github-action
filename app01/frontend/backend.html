@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="container">
+        <h2>User Dashboard</h2>
+        <button id="load-dashboard">Load Dashboard</button>
+        <button id="logout" style="margin-top: 10px; background-color: #dc3545;">Logout</button>
+        <p id="dashboard-message"></p>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:8000";
+
+        // ⛔ Redirect to login if not authenticated
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+            window.location.href = "index.html";
+        }
+
+        // 🔐 Fetch protected dashboard data
+        document.getElementById("load-dashboard").addEventListener("click", async () => {
+            try {
+                const res = await fetch(`${API_BASE}/dashboard`, {
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + token,
+                    }
+                });
+
+                const data = await res.json();
+                document.getElementById("dashboard-message").innerText = res.ok
+                    ? data.message
+                    : data.detail || "Access denied";
+            } catch (err) {
+                document.getElementById("dashboard-message").innerText = "Failed to fetch dashboard";
+            }
+        });
+
+        // 🚪 Logout functionality
+        document.getElementById("logout").addEventListener("click", () => {
+            localStorage.removeItem("access_token");
+            window.location.href = "index.html";
+        });
+    </script>
+</body>
+
+</html>

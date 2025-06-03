@@ -18,23 +18,19 @@ jobs:
           pwd
           ls
 
-      - name: Build Docker Images from /app01 using api.Dockerfile, db.Dockerfile, and frontend.Dockerfile
+      - name: Build Docker Image from /app01
         run: |
           cd app01
-          sudo docker build -f api.Dockerfile -t cyprientemateu/user-registration-api:latest .
-          sudo docker build -f db.Dockerfile -t cyprientemateu/user-registration-db:latest .
-          sudo docker build -f frontend.Dockerfile -t cyprientemateu/user-registration-frontend:latest .
+          sudo docker build -t cyprientemateu/s9-app01:latest .
           sudo docker images
 
       - name: Login to DockerHub
         run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-      - name: Push Docker Images to DockerHub
+      - name: Push Docker Image
         run: |
-          docker push cyprientemateu/user-registration-api:latest
-          docker push cyprientemateu/user-registration-frontend:latest
-          docker push cyprientemateu/user-registration-db:latest
-      
+          docker push cyprientemateu/s9-app01:latest
+
       # Notify Slack on success
       - name: Notify Slack on success
         if: success()
@@ -94,4 +90,4 @@ jobs:
                 { "title": "Time", "value": "'"$(date -u)"'", "short": false }
               ]
             }]
-          }' $SLACK_WEBHOOK
+          }' $SLACK_WEBHOOK    

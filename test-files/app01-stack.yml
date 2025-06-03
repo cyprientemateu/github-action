@@ -1,0 +1,72 @@
+name: DevOps Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  API_IMAGE: cyprientemateu/user-registration-api:latest
+  DB_IMAGE: cyprientemateu/user-registration-db:latest
+  FRONTEND_IMAGE: cyprientemateu/user-registration-frontend:latest
+
+jobs:
+  build_and_push_images:
+    name: Build and Push Docker Images to DockerHub
+    runs-on: [self-hosted, tcc-deploy]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Build Docker Images (API, DB, Frontend)
+        working-directory: app01
+        run: |
+          sudo docker build -f api.Dockerfile -t $API_IMAGE .
+          sudo docker build -f db.Dockerfile -t $DB_IMAGE .
+          sudo docker build -f frontend.Dockerfile -t $FRONTEND_IMAGE .
+          sudo docker images
+
+      - name: Login to DockerHub
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Push Docker Images
+        run: |
+          docker push $API_IMAGE
+          docker push $DB_IMAGE
+          docker push $FRONTEND_IMAGE
+
+  deploy:
+    name: Deploy using Docker Compose
+    runs-on: [self-hosted, tcc-deploy]
+    needs: build_and_push_images
+
+    env:
+      API_IMAGE: cyprientemateu/user-registration-api:latest
+      DB_IMAGE: cyprientemateu/user-registration-db:latest
+      FRONTEND_IMAGE: cyprientemateu/user-registration-frontend:latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Replace image placeholders in docker-compose.yml
+        working-directory: app01
+        run: |
+          sed -i "s|API_IMAGE|$API_IMAGE|g" docker-compose.yml
+          sed -i "s|DB_IMAGE|$DB_IMAGE|g" docker-compose.yml
+          sed -i "s|FRONTEND_IMAGE|$FRONTEND_IMAGE|g" docker-compose.yml
+          sed -i "s|POSTGRES_USER_user-registration|${{ vars.POSTGRES_USER_user-registration }}|g" docker-compose.yml
+          sed -i "s|POSTGRES_PASSWORD_user-registration|${{ secrets.POSTGRES_PASSWORD_user-registration }}|g" docker-compose.yml
+          cat docker-compose.yml
+
+          docker pull $API_IMAGE
+          docker pull $DB_IMAGE
+          docker pull $FRONTEND_IMAGE
+
+      - name: Deploy with Docker Compose
+        working-directory: app01
+        run: |
+          docker compose down --volumes --remove-orphans
+          docker-compose up -d
+          docker-compose ps

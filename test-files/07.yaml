@@ -1,0 +1,29 @@
+name: DevOps Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  checkout:
+    name: Stage 1 - Checkout
+    runs-on: [self-hosted,tcc-deploy]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Checkout Info
+        run: |
+          echo "Checking out the repository. Please wait ............"
+          sleep 3
+
+  test:
+    name: Stage 2 - Test
+    runs-on: [self-hosted,tcc-deploy]
+    needs: checkout
+    steps:
+      - name: Testing the Code
+        run: |
+         sudo docker images
+         kubectl get ns

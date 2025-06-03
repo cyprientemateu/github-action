@@ -1,5 +1,5 @@
 git add -A
-git commit -m "Update files"
+git commit -m "User Registration app test"
 git push origin main
 if [ $? -eq 0 ]; then
     echo "Changes pushed successfully."
