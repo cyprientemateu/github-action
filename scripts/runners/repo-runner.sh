@@ -5,8 +5,8 @@
 # -----------------------
 RUNNER_VERSION="2.324.0"
 REPO_URL="https://github.com/cyprientemateu/github-action"
-RUNNER_TOKEN="A3TRWM5KTKCV55ZCU6IKL5DIF7QPI"
-RUNNER_LABELS="tcc=build,tcc-deploy"
+RUNNER_TOKEN="A3TRWM3MJAISAPBLRQ3VWDLIH6L6W"
+RUNNER_LABELS="tcc-build,tcc-deploy"
 RUNNER_USER="runner"
 RUNNER_COUNT=3
 BASE_DIR="/opt/github-runner-multi"
@@ -38,7 +38,7 @@ if [ ! -f "$RUNNER_TAR" ]; then
 fi
 
 echo "[INFO] Validating SHA256 checksum"
-echo "e8e24a3477da17040b4d6fa6d34c6ecb9a2879e800aa532518ec21e49e21d7b4  $RUNNER_TAR" | shasum -a 256 -c
+echo "5020da7139d85c776059f351e0de8fdec753affc9c558e892472d43ebeb518f4  $RUNNER_TAR" | shasum -a 256 -c
 
 # -----------------------
 # Install multiple runners
