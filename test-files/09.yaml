@@ -49,7 +49,7 @@ jobs:
                 { "title": "Repo", "value": "${{ github.repository }}", "short": true },
                 { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
                 { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
-                { "title": "Apps", "value": "clinic-container on port 80, resume-website on port 81", "short": false },
+                { "title": "App", "value": "User Registration app", "short": false },
                 { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
                 { "title": "Time", "value": "'"$(date -u)"'", "short": false }
               ]
