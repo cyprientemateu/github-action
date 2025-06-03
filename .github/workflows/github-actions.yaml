@@ -1,29 +1,19 @@
-name: DevOps Pipeline
+name: Check Docker and Git Versions
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
-  checkout:
-    name: Stage 1 - Checkout
-    runs-on: [self-hosted,tcc-deploy]
+  check-versions:
+    runs-on: [tcc-deploy]
+
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Checkout Info
-        run: |
-          echo "Checking out the repository. Please wait ............"
-          sleep 3
+      # - name: Check Docker version
+      #   run: docker --version
 
-  test:
-    name: Stage 2 - Test
-    runs-on: [self-hosted,tcc-deploy]
-    needs: checkout
-    steps:
-      - name: Testing the Code
-        run: |
-         sudo docker images
-         kubectl get ns
+      - name: Check Git version
+        run: git --version
