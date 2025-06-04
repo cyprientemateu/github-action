@@ -5,8 +5,8 @@ services:
     image: DB_IMAGE
     container_name: app01_db
     environment:
-      POSTGRES_USER: POSTGRES_USER_S9
-      POSTGRES_PASSWORD: POSTGRES_PASSWORD_S9
+      POSTGRES_USER: POSTGRES_USER_REGISTRATION
+      POSTGRES_PASSWORD: POSTGRES_PASSWORD_REGISTRATION
       POSTGRES_DB: logindb
     volumes:
       - db_data:/var/lib/postgresql/data
@@ -24,8 +24,8 @@ services:
     depends_on:
       - db
     environment:
-      POSTGRES_USER: POSTGRES_USER_S9
-      POSTGRES_PASSWORD: POSTGRES_PASSWORD_S9
+      POSTGRES_USER: POSTGRES_USER_REGISTRATION
+      POSTGRES_PASSWORD: POSTGRES_PASSWORD_REGISTRATION
       POSTGRES_DB: logindb
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432

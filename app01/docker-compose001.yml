@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   db:
-    image: devopseasylearning/s9-db:latest
+    image: cyprientemateu/user-registration-db:latest
     container_name: app01_db
     environment:
       POSTGRES_USER: admin
@@ -19,7 +19,7 @@ services:
       retries: 5
 
   user-service:
-    image: devopseasylearning/s9-api:latest
+    image: cyprientemateu/user-registration-api:latest
     container_name: app01_user-service
     depends_on:
       - db
@@ -34,7 +34,7 @@ services:
     restart: on-failure
 
   frontend-service:
-    image: devopseasylearning/s9-frontend:latest
+    image: cyprientemateu/user-registration-frontend:latest
     container_name: app01_frontend
     depends_on:
       - user-service

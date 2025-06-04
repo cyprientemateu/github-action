@@ -56,8 +56,8 @@ jobs:
           sed -i "s|API_IMAGE|$API_IMAGE|g" docker-compose.yml
           sed -i "s|DB_IMAGE|$DB_IMAGE|g" docker-compose.yml
           sed -i "s|FRONTEND_IMAGE|$FRONTEND_IMAGE|g" docker-compose.yml
-          sed -i "s|POSTGRES_USER_user-registration|${{ vars.POSTGRES_USER_user-registration }}|g" docker-compose.yml
-          sed -i "s|POSTGRES_PASSWORD_user-registration|${{ secrets.POSTGRES_PASSWORD_user-registration }}|g" docker-compose.yml
+          sed -i "s|POSTGRES_USER_REGISTRATION|${{ vars.POSTGRES_USER_REGISTRATION }}|g" docker-compose.yml
+          sed -i "s|POSTGRES_PASSWORD_REGISTRATION|${{ secrets.POSTGRES_PASSWORD_REGISTRATION }}|g" docker-compose.yml
           cat docker-compose.yml
 
           docker pull $API_IMAGE
@@ -70,3 +70,64 @@ jobs:
           docker compose down --volumes --remove-orphans
           docker-compose up -d
           docker-compose ps
+
+      # Notify Slack on success
+      - name: Notify Slack on success
+        if: success()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "good",
+              "title": "*✅ Deployment Succeeded*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
+                { "title": "App", "value": "User Registration app", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK
+
+      # Notify Slack on failure
+      - name: Notify Slack on failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "danger",
+              "title": "*❌ Deployment Failed*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK
+
+      # Notify Slack if unstable (cancelled/skipped)
+      - name: Notify Slack if unstable
+        if: ${{ job.status == 'cancelled' || job.status == 'skipped' }}
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "warning",
+              "title": "*⚠️ Deployment Unstable*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK    
