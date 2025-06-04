@@ -114,7 +114,7 @@ POSTGRES_PORT=5432
 
 ## Login into DB
 ```sh
-docker exec -it a39659af6f86 psql -U admin -d logindb
+docker exec -it 1154ab1cbe20 psql -U admin -d logindb
 
 -- Show all tables
 \dt
