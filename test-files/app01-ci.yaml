@@ -1,0 +1,160 @@
+name: DevOps Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_and_push_images:
+    name: Build and Push Docker Images to DockerHub
+    runs-on: [self-hosted, s8]
+
+    env:
+      API_IMAGE: devopseasylearning/s9-api:latest
+      DB_IMAGE: devopseasylearning/s9-db:latest
+      FRONTEND_IMAGE: devopseasylearning/s9-frontend:latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Run Checkov Scan with Config File
+        run: |
+          ls -l
+          echo "Running Checkov .checkov.yaml config"
+          cat .checkov.yaml
+          checkov -f s9/app01/api.Dockerfile --config-file .checkov.yaml
+          checkov -f s9/app01/db.Dockerfile --config-file .checkov.yaml
+          checkov -f s9/app01/frontend.Dockerfile --config-file .checkov.yaml
+
+      - name: Run SonarQube Scan
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          sonar-scanner \
+            -Dsonar.login=${SONAR_TOKEN}
+
+      - name: Build Docker Images (API, DB, Frontend)
+        working-directory: s9/app01
+        run: |
+          sudo docker build -f api.Dockerfile -t $API_IMAGE .
+          sudo docker build -f db.Dockerfile -t $DB_IMAGE .
+          sudo docker build -f frontend.Dockerfile -t $FRONTEND_IMAGE .
+          sudo docker images
+
+      - name: Scan Docker Images with Trivy
+        run: |
+          echo "Scanning API image..."
+          trivy image --severity MEDIUM,HIGH,CRITICAL --no-progress $API_IMAGE
+
+          # echo "Scanning DB image..."
+          # trivy image --severity MEDIUM,HIGH,CRITICAL --no-progress $DB_IMAGE
+
+          # echo "Scanning Frontend image..."
+          # trivy image --severity MEDIUM,HIGH,CRITICAL --no-progress $FRONTEND_IMAGE
+
+      - name: Login to DockerHub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ vars.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Push Docker Images
+        run: |
+          docker push $API_IMAGE
+          docker push $DB_IMAGE
+          docker push $FRONTEND_IMAGE
+
+  deploy:
+    name: Deploy using Docker Compose
+    runs-on: [self-hosted, s8]
+    needs: build_and_push_images
+
+    env:
+      API_IMAGE: devopseasylearning/s9-api:latest
+      DB_IMAGE: devopseasylearning/s9-db:latest
+      FRONTEND_IMAGE: devopseasylearning/s9-frontend:latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Replace image placeholders in docker-compose.yml
+        working-directory: s9/app01
+        run: |
+          sed -i "s|API_IMAGE|$API_IMAGE|g" docker-compose.yml
+          sed -i "s|DB_IMAGE|$DB_IMAGE|g" docker-compose.yml
+          sed -i "s|FRONTEND_IMAGE|$FRONTEND_IMAGE|g" docker-compose.yml
+          sed -i "s|POSTGRES_USER_S9|${{ vars.POSTGRES_USER_S9 }}|g" docker-compose.yml
+          sed -i "s|POSTGRES_PASSWORD_S9|${{ secrets.POSTGRES_PASSWORD_S9 }}|g" docker-compose.yml
+          cat docker-compose.yml
+
+          docker pull $API_IMAGE
+          docker pull $DB_IMAGE
+          docker pull $FRONTEND_IMAGE
+
+      - name: Deploy with Docker Compose
+        working-directory: s9/app01
+        run: |
+          docker compose down --volumes --remove-orphans
+          docker-compose up -d
+          docker-compose ps
+
+      # Notify Slack on success
+      - name: Notify Slack on success
+        if: success()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "good",
+              "title": "*✅ Deployment Succeeded*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
+                { "title": "App", "value": "User Registration app", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK
+
+      # Notify Slack on failure
+      - name: Notify Slack on failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "danger",
+              "title": "*❌ Deployment Failed*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK
+
+      # Notify Slack if unstable (cancelled/skipped)
+      - name: Notify Slack if unstable
+        if: ${{ job.status == 'cancelled' || job.status == 'skipped' }}
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "warning",
+              "title": "*⚠️ Deployment Unstable*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK    
