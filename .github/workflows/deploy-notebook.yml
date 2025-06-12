@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: DEBUG Show environment
+      - name: Show environment info (Debug)
         run: |
           echo "GitHub ref: ${{ github.ref }}"
           echo "GitHub SHA: ${{ github.sha }}"
@@ -27,6 +27,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Run notebook with Papermill
