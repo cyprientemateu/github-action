@@ -1,0 +1,87 @@
+name: Deploy App from DockerHub
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Pull Docker image from Docker Hub
+        run: sudo docker pull cyprientemateu/clinic-website:v1
+
+      - name: Stop and remove existing container if running
+        run: |
+          sudo docker stop myapp-container || true
+          sudo docker rm myapp-container || true
+
+      - name: Run Docker container
+        run: |
+          sudo docker run -d --name myapp-container -p 80:80 cyprientemateu/clinic-website:v1
+
+      - name: Notify Slack on success
+        if: success()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "good",
+              "title": "*✅ Deployment Succeeded*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK
+
+      - name: Notify Slack on failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "danger",
+              "title": "*❌ Deployment Failed*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK
+
+      # Optional: notify for unstable status (e.g., skipped or cancelled jobs)
+      - name: Notify Slack if unstable
+        if: ${{ job.status == 'cancelled' || job.status == 'skipped' }}
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "warning",
+              "title": "*⚠️ Deployment Unstable*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK
