@@ -1,0 +1,101 @@
+name: Run and Deploy Notebooks to EC2
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'notebooks/**'
+      - '.github/workflows/deploy-notebook.yml'
+
+jobs:
+  run-notebook:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: DEBUG Show environment
+        run: |
+          echo "GitHub ref: ${{ github.ref }}"
+          echo "GitHub SHA: ${{ github.sha }}"
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run notebook with Papermill
+        run: |
+          mkdir -p output
+          papermill notebooks/my_analysis.ipynb output/my_analysis_output.ipynb
+
+      - name: Copy notebook to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          source: "output/my_analysis_output.ipynb"
+          target: "~/notebooks/output/"
+
+      - name: Notify Slack on success
+        if: success()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "good",
+              "title": "*✅ Deployment Succeeded*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK
+
+      - name: Notify Slack on failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "danger",
+              "title": "*❌ Deployment Failed*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK
+
+      - name: Notify Slack if unstable
+        if: ${{ job.status == 'cancelled' || job.status == 'skipped' }}
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "warning",
+              "title": "*⚠️ Deployment Unstable*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK
