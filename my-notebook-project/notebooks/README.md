@@ -160,10 +160,17 @@ Slack notifications are triggered based on job status:
    ```bash
    jupyter notebook --no-browser --ip=0.0.0.0 --port=8888
    ```
-
-4. Open the notebook in your browser:
+   This will output a URL with a token, something like:
+   ```ruby
+   http://0.0.0.0:8888/?token=abc123...
    ```
-   http://<EC2_PUBLIC_IP>:8888
+
+4. Set up Security Group for EC2
+  Make sure the EC2 security group allows inbound TCP traffic on port 8888 from your IP (or 0.0.0.0/0 if you want it open, but that’s less secure).  
+
+5. Open the notebook in your browser:
+   ```
+   http://<EC2_PUBLIC_IP>:8888/?token=abc123...
    ```
    > You'll need the token printed in your SSH terminal output to log in.
 
