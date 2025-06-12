@@ -33,7 +33,7 @@ jobs:
       - name: Run notebook with Papermill
         run: |
           mkdir -p output
-          papermill my-notebook-project/notebooks/my_analysis.ipynb output/my_analysis_output.ipynb
+          papermill my-notebook-project/notebooks/my_analysis.ipynb output/my_analysis_output.ipynb --kernel python3
 
       - name: Copy notebook to EC2
         uses: appleboy/scp-action@v0.1.7

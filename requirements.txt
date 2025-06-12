@@ -1,3 +1,5 @@
 jupyter
 papermill
 nbconvert
+ipykernel
+nbformat
