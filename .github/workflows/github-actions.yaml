@@ -1,55 +1,97 @@
-name: DevOps Pipeline
+name: Run and Deploy Notebooks to EC2
 
 on:
   push:
-    branches:
-      - main
-      - develop
+    branches: [ main ]
 
 jobs:
-  devops-pipeline:
-    runs-on: [self-hosted,tcc-deploy]
+  run-notebook:
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Checkout Stage
-        run: |
-          echo "Checking out the repository. Please wait ............"
-          sleep 1
-      - name: Testing the Code
-        run: |
-          echo "Testing the code. Please wait ............"
-          sleep 1
-      - name: Scanning the Code
-        run: |
-          echo "Scanning the code. Please wait ............"
-          sleep 1
-      - name: Building the Code
-        run: |
-          echo "Building the code. Please wait ............"
-          sleep 1
-      - name: Pushing the Code to Artifactory
-        run: |
-          echo "Pushing the code to artifactory. Please wait ............"
-          sleep 1
-      - name: Deploying the Code
-        run: |
-          echo "Deploying the code. Please wait ............"
-          sleep 1
-      - name: Checking the Container State
-        run: |
-          echo "Checking the container state. Please wait ............"
-          sleep 1
-      - name: Clean Up
-        run: |
-          echo "Clean Up. Please wait ............"
-          sleep 1
-      - name: Success Message
-        if: success()
-        run: echo "Pipeline succeeded!"
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
 
-      - name: Failure Message
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run notebook with Papermill
+        run: |
+          mkdir output
+          papermill notebooks/my_analysis.ipynb output/my_analysis_output.ipynb
+
+      - name: Copy notebook to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          source: "output/my_analysis_output.ipynb"
+          target: "~/notebooks/output/"
+      
+      # Notify Slack on success
+      - name: Notify Slack on success
+        if: success()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "good",
+              "title": "*✅ Deployment Succeeded*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
+                { "title": "App", "value": "User Registration app", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK
+
+      # Notify Slack on failure
+      - name: Notify Slack on failure
         if: failure()
-        run: echo "Pipeline failed!"
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "danger",
+              "title": "*❌ Deployment Failed*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK
+
+      # Notify Slack if unstable (cancelled/skipped)
+      - name: Notify Slack if unstable
+        if: ${{ job.status == 'cancelled' || job.status == 'skipped' }}
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "attachments": [{
+              "color": "warning",
+              "title": "*⚠️ Deployment Unstable*",
+              "fields": [
+                { "title": "Repo", "value": "${{ github.repository }}", "short": true },
+                { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                { "title": "Commit", "value": "*${{ github.actor }}* pushed `${{ github.event.head_commit.message }}` (`${{ github.sha }}`)", "short": false },
+                { "title": "Workflow", "value": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>", "short": false },
+                { "title": "Time", "value": "'"$(date -u)"'", "short": false }
+              ]
+            }]
+          }' $SLACK_WEBHOOK

@@ -1,5 +1,5 @@
 git add -A
-git commit -m "test"
+git commit -m "Initial notebook CI/CD setup"
 git push origin main
 if [ $? -eq 0 ]; then
     echo "Changes pushed successfully."
